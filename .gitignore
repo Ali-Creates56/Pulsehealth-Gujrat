@@ -1,0 +1,37 @@
+# ========================
+# PulseHealth Gujrat .gitignore
+# ========================
+
+# --- Secret Configuration ---
+config.js
+
+# --- Environment Files ---
+.env
+.env.local
+.env.*.local
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- OS Generated ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# --- Dependencies ---
+node_modules/
+package-lock.json
+
+# --- Build Outputs ---
+dist/
+build/
+*.map
+
+# --- Logs ---
+*.log
+npm-debug.log*

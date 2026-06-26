@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- SEO & Accessibility Metadata -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PulseHealth Gujrat: Live Clinical Booking & Medical Portal</title>
+    <meta name="description" content="PulseHealth Gujrat is a premier medical portal in Gujrat, Punjab, Pakistan featuring real-time clinic mappings, doctor search filters, inline form validation, and medical galleries." />
+    <meta name="keywords" content="Gujrat clinic booking, doctors Punjab Pakistan, digital health portal Lahore Gujrat, Mapbox clinic locator, medical scheduling system" />
+    <meta name="author" content="PulseHealth Pakistan" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://api.mapbox.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://api.mapbox.com https://*.tiles.mapbox.com; connect-src 'self' https://api.mapbox.com https://*.tiles.mapbox.com https://events.mapbox.com; worker-src 'self' blob:;" />
+    
+    <!-- OpenGraph Metadata -->
+    <meta property="og:title" content="PulseHealth Gujrat: Live Clinical Booking & Medical Portal" />
+    <meta property="og:description" content="Discover, filter, and schedule medical consultations with top specialists in Gujrat, Pakistan. Built using vanilla JS and Mapbox API." />
+    <meta property="og:type" content="website" />
+
+    <!-- External Referencing: Google Fonts (with beautiful fallbacks) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+    <!-- External Referencing: Mapbox GL JS & CSS -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
+
+    <!-- Referencing: Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind Play CDN for immediate zero-config responsive styling in local VS Code -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica", "Arial", "sans-serif"],
+              display: ["Space Grotesk", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+              mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"]
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- Internal Stylesheet Link -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="bg-[#0b0f19] text-gray-100 min-h-screen selection:bg-sky-500 selection:text-slate-900 grid-bg-animated flex flex-col relative overflow-x-hidden font-sans">
+    
+    <!-- Animated radial background overlay -->
+    <div class="absolute top-0 left-0 w-full h-[500px] bg-pulse-glow-clinical pointer-events-none z-0"></div>
+
+    <!-- Semantic Header Area -->
+    <header role="banner" class="relative z-20 border-b border-slate-900 bg-slate-950/80 backdrop-blur-md px-6 py-4 flex flex-col lg:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 bg-gradient-to-br from-sky-500 to-indigo-500 rounded-xl text-slate-950 font-bold shadow-lg shadow-sky-500/10 hover:rotate-6 transition-transform">
+          <i data-lucide="activity" class="w-5 h-5 text-slate-900"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-display font-extrabold tracking-tight text-slate-100 text-lg uppercase">
+              PulseHealth Gujrat
+            </h1>
+            <span class="px-1.5 py-0.5 rounded text-[8px] font-mono bg-sky-500/10 text-sky-400 border border-sky-500/20 uppercase">
+              Active: Gujrat, PK
+            </span>
+          </div>
+          <p class="text-[10px] text-gray-400 font-mono">
+            APPOINTMENT BOOKING SYSTEM
+          </p>
+        </div>
+      </div>
+
+      <!-- Live Interactive Map controls / styling options (JS Displays & Toggle state requirements) -->
+      <nav class="flex flex-wrap items-center gap-4" aria-label="Portal main navigation">
+        <div class="flex items-center gap-2 bg-slate-900 border border-slate-850 rounded-lg px-3 py-1.5 text-xs">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span class="font-mono text-[9px] uppercase text-gray-400">
+            System Online: 5 Clinics Located
+          </span>
+        </div>
+
+        <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-850 p-1 rounded-lg">
+          <span class="text-[9px] font-mono text-slate-500 uppercase px-1.5">Map Skin:</span>
+          <button id="btn-theme-streets" onclick="setMapSkin('streets-v12')" class="px-2 py-0.5 rounded text-[9px] font-mono uppercase bg-slate-900 text-slate-400 hover:text-white cursor-pointer transition-colors">Streets</button>
+          <button id="btn-theme-dark" onclick="setMapSkin('dark-v11')" class="px-2 py-0.5 rounded text-[9px] font-mono uppercase bg-sky-500 text-slate-950 font-semibold cursor-pointer transition-colors">Dark</button>
+          <button id="btn-theme-satellite" onclick="setMapSkin('satellite-v9')" class="px-2 py-0.5 rounded text-[9px] font-mono uppercase bg-slate-900 text-slate-400 hover:text-white cursor-pointer transition-colors">Satellite</button>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Main Content Container with SEO and layout focus -->
+    <main id="main-content" class="relative z-10 p-4 md:p-6 flex-grow space-y-6 max-w-7xl w-full mx-auto" role="main">
+      
+      <!-- Responsive Medical KPI Dashboard Statistics Row -->
+      <section aria-label="Clinical Metrics Overview" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Metric 1 -->
+        <div class="p-4 bg-slate-900/50 border border-slate-850 rounded-xl transition-all duration-350 hover:scale-[1.02] hover:-translate-y-0.5 group hover:border-sky-500/30">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-mono text-[10px] text-gray-400 tracking-wider">MARCHED CLINICS</span>
+            <div class="p-1.5 rounded-lg bg-sky-500/10 text-sky-400">
+              <i data-lucide="hospital" class="w-3.5 h-3.5"></i>
+            </div>
+          </div>
+          <div class="flex items-baseline gap-1.5">
+            <span id="metric-total-clinics" class="font-display font-extrabold text-2xl text-slate-50 tracking-tight">5</span>
+          </div>
+        </div>
+
+        <!-- Metric 2 -->
+        <div class="p-4 bg-slate-900/50 border border-slate-850 rounded-xl transition-all duration-350 hover:scale-[1.02] hover:-translate-y-0.5 group hover:border-emerald-500/30 pulse-sky-health">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-mono text-[10px] text-gray-400 tracking-wider">AVAILABLE DOCTORS</span>
+            <div class="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
+              <i data-lucide="user-round-check" class="w-3.5 h-3.5"></i>
+            </div>
+          </div>
+          <div class="flex items-baseline gap-1.5">
+            <span id="metric-total-doctors" class="font-display font-extrabold text-2xl text-slate-50 tracking-tight">8</span>
+          </div>
+        </div>
+
+        <!-- Metric 3 -->
+        <div class="p-4 bg-slate-900/50 border border-slate-850 rounded-xl transition-all duration-350 hover:scale-[1.02] hover:-translate-y-0.5 group hover:border-indigo-500/30">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-mono text-[10px] text-gray-400 tracking-wider">BOOKINGS DISPATCHED</span>
+            <div class="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
+              <i data-lucide="calendar-check-2" class="w-3.5 h-3.5"></i>
+            </div>
+          </div>
+          <div class="flex items-baseline gap-1.5">
+            <span id="metric-total-bookings" class="font-display font-extrabold text-2xl text-slate-50 tracking-tight">0</span>
+          </div>
+        </div>
+
+        <!-- Metric 4 -->
+        <div class="p-4 bg-slate-900/50 border border-slate-850 rounded-xl transition-all duration-350 hover:scale-[1.02] hover:-translate-y-0.5 group hover:border-pink-500/30">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-mono text-[10px] text-gray-400 tracking-wider">AVERAGE CONSULTATION</span>
+            <div class="p-1.5 rounded-lg bg-pink-500/10 text-pink-400">
+              <i data-lucide="banknote" class="w-3.5 h-3.5"></i>
+            </div>
+          </div>
+          <div class="flex items-baseline gap-1.5">
+            <span class="font-display font-extrabold text-2xl text-slate-55 tracking-tight">PKR 1,750</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Central Body: Master Interactive Layout splits with CSS Grids -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        
+        <!-- Interactive Clinic list & Doctors Table section -->
+        <section aria-label="Available Doctors Register" class="lg:col-span-8 bg-slate-900/50 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between overflow-hidden">
+          <div>
+            <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-4">
+              <div>
+                <h2 class="font-display font-bold text-xl text-slate-100">Medical Specialists in Gujrat</h2>
+              </div>
+
+              <!-- Compact vs Cozy interactive Toggle state indicator -->
+              <div class="flex items-center gap-3">
+                <button id="toggle-list-view" onclick="toggleDensityView()" type="button" class="px-3 py-1.5 bg-slate-950 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 text-slate-300 rounded-lg text-[11px] font-mono transition-colors cursor-pointer flex items-center gap-1">
+                  <i data-lucide="stretch-horizontal" class="w-3 h-3 text-sky-400"></i>
+                  <span>Density: Comfortable</span>
+                </button>
+
+                <div class="relative">
+                  <i data-lucide="search" class="w-3.5 h-3.5 text-gray-500 absolute left-3 top-2.5"></i>
+                  <input
+                    id="doctor-search"
+                    onkeyup="handleSearchDoctors()"
+                    type="text"
+                    placeholder="Search doctor, specialty"
+                    class="bg-slate-950/80 hover:bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-100 placeholder-slate-600 w-52 clinical-input-focus transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Category Fast Filters layout -->
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-850 pb-4 mb-4">
+              <div class="flex flex-wrap gap-1.5" id="specialty-tabs-container">
+                <!-- Will render dynamically under js, let's include static placeholders that JS binds to -->
+                <button onclick="filterBySpecialty('All')" class="category-pill active-pill px-3 py-1 rounded-full text-[10px] font-medium transition-colors bg-sky-500/15 text-sky-400 border border-sky-500/30 cursor-pointer">All Specialties</button>
+                <button onclick="filterBySpecialty('General Medicine')" class="category-pill px-3 py-1 rounded-full text-[10px] font-medium transition-colors bg-slate-950 text-gray-400 hover:text-white border border-slate-850 hover:border-slate-800 cursor-pointer">General Medicine</button>
+                <button onclick="filterBySpecialty('Cardiology')" class="category-pill px-3 py-1 rounded-full text-[10px] font-medium transition-colors bg-slate-950 text-gray-400 hover:text-white border border-slate-850 hover:border-slate-800 cursor-pointer">Cardiology</button>
+                <button onclick="filterBySpecialty('Pediatrics')" class="category-pill px-3 py-1 rounded-full text-[10px] font-medium transition-colors bg-slate-950 text-gray-400 hover:text-white border border-slate-850 hover:border-slate-800 cursor-pointer">Pediatrics</button>
+                <button onclick="filterBySpecialty('Dental')" class="category-pill px-3 py-1 rounded-full text-[10px] font-medium transition-colors bg-slate-950 text-gray-400 hover:text-white border border-slate-850 hover:border-slate-800 cursor-pointer">Dental Care</button>
+                <button onclick="filterBySpecialty('Mental Health')" class="category-pill px-3 py-1 rounded-full text-[10px] font-medium transition-colors bg-slate-950 text-gray-400 hover:text-white border border-slate-850 hover:border-slate-800 cursor-pointer">Mental Health</button>
+              </div>
+
+              <!-- Sorting triggers selection block -->
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-gray-500 font-mono">SORT BY:</span>
+                <select id="doctor-sort" onchange="handleSortDoctors()" class="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-[10px] text-slate-300 clinical-input-focus cursor-pointer">
+                  <option value="name">Name (A-Z)</option>
+                  <option value="rating">Rating (Highest First)</option>
+                  <option value="fee-low">Fee (Lowest First)</option>
+                  <option value="fee-high">Fee (Highest First)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Database Dynamic Table of available doctors -->
+            <div class="overflow-x-auto rounded-xl border border-slate-850 bg-slate-955/30">
+              <table class="min-w-full text-left border-collapse" role="grid" aria-label="Doctors register table">
+                <thead class="bg-slate-950 text-gray-400 font-mono text-[9px] uppercase tracking-wider border-b border-slate-850">
+                  <tr>
+                    <th class="px-4 py-3 cursor-pointer select-none">Doctor Info & Clinic Name</th>
+                    <th class="px-4 py-3">Specialty</th>
+                    <th class="px-4 py-3">Consultation Fee</th>
+                    <th class="px-4 py-3 text-center">Score / Rating</th>
+                    <th class="px-4 py-3 text-right">Map Link</th>
+                  </tr>
+                </thead>
+                <tbody id="doctors-table-body" class="divide-y divide-slate-900/60 text-xs">
+                  <!-- JS dynamically renders rows here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bottom details block -->
+          <div class="flex flex-col md:flex-row items-center justify-between text-[10px] text-slate-400 font-mono border-t border-slate-900 pt-3 mt-4">
+            <span id="showing-records-text">SHOWING 8 OF 8 MEDICAL LOGS</span>
+            <span class="text-sky-400 flex items-center gap-1"><i data-lucide="info" class="w-3 h-3 text-sky-400"></i> Click rows to fly map coordinate focused on correct clinic!</span>
+          </div>
+        </section>
+
+        <!-- Right: Mapbox Live Coordinates Web API Widget -->
+        <section aria-label="Clinic Map Coordinates" class="lg:col-span-4 flex flex-col bg-slate-900/50 border border-slate-800 rounded-2xl p-4 overflow-hidden min-h-[400px]">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <span class="text-sky-400 font-mono text-[10px] uppercase tracking-wider block">Live Punjab</span>
+              <h3 class="font-display font-semibold text-sm text-slate-100 flex items-center gap-1.5">
+                <i data-lucide="map" class="w-4 h-4 text-sky-400 animate-pulse"></i>
+                <span>Gujrat Clinics Live Map</span>
+              </h3>
+            </div>
+          </div>
+
+          <!-- Simulated Laser Scan Indicator -->
+          <div class="relative flex-1 rounded-xl bg-slate-950 overflow-hidden border border-slate-850 shadow-inner">
+            <div id="mapbox-canvas" class="absolute inset-0 w-full h-full"></div>
+            <div class="scanning-bar"></div>
+
+            <!-- Loader fallback is replaced once Mapbox loads -->
+            <div id="map-loading-indicator" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-2 z-20 transition-opacity duration-300">
+              <i data-lucide="loader-2" class="w-6 h-6 text-sky-400 animate-spin"></i>
+              <span class="font-mono text-[10px] text-gray-400 uppercase tracking-widest">Assembling Mapbox GL ...</span>
+            </div>
+
+            <!-- Map Legends float boxes -->
+            <div class="absolute bottom-3 left-3 z-10 bg-slate-950/85 backdrop-blur-md border border-slate-800 p-2.5 rounded-lg text-[9px] space-y-1 block">
+              <p class="font-mono text-[8px] uppercase text-gray-400 border-b border-slate-900 pb-1 mb-1 font-semibold">Clinic Specialties key</p>
+              <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-[#38bdf8]"></span>
+                <span class="text-slate-300">General Care / Ortho</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-[#f43f5e]"></span>
+                <span class="text-slate-300">Cardiology / Surgery</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-[#10b981]"></span>
+                <span class="text-slate-300">Pediatrics / Dental</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Selected coordinate display node for validations -->
+          <div class="mt-3 flex items-center justify-between text-[10px] text-gray-400 font-mono bg-slate-950/50 p-2 rounded border border-slate-850">
+            <span>Coordinate Target:</span>
+            <span id="selected-coord-indicator" class="text-sky-400 font-bold font-mono">Click custom spot on map to grab coordinate!</span>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Secondary layout flex-grid: validated patient reservation + booked table -->
+      <div id="booking-and-patient-section" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Form Patient Dispatch Room: validated data schema entry -->
+        <section aria-label="Book Appointment Form" class="lg:col-span-5 bg-slate-900/50 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <span class="text-sky-400 font-mono text-xs uppercase tracking-widest block mb-0.5">BOOK APPOINTEMNET</span>
+                <h2 class="font-display font-semibold text-base text-slate-100">Schedule Patient Slot</h2>
+              </div>
+              <button onclick="triggerFormAutofill()" type="button" class="flex items-center gap-1 px-2.5 py-1 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 rounded text-[10px] font-mono transition-transform duration-250 cursor-pointer">
+                <i data-lucide="sparkles" class="w-3 h-3 text-amber-400 animate-pulse"></i>
+                <span>Interactive Autofill</span>
+              </button>
+            </div>
+
+            <!-- Pure HTML Validated Form -->
+            <form id="appointment-booking-form" onsubmit="handleAppointmentSubmit(event)" class="space-y-3.5">
+              
+              <!-- Patient full name -->
+              <div>
+                <label for="p-name" class="text-[11px] text-gray-400 font-medium block mb-0.5">Patient Full Name</label>
+                <div class="relative">
+                  <input
+                    id="p-name"
+                    type="text"
+                    required
+                    placeholder="e.g., Muhammad Ali Faisal"
+                    oninput="validateFieldName()"
+                    class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-600 clinical-input-focus transition-colors"
+                  />
+                  <div class="absolute right-3 top-2.5" id="val-icon-name"></div>
+                </div>
+                <span id="error-name" class="text-[9px] text-rose-400 font-mono mt-0.5 hidden">Required field. Must exceed 3 alphanumeric characters.</span>
+              </div>
+
+              <!-- Contact grouping: Phone & Email -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label for="p-phone" class="text-[11px] text-gray-400 font-medium block mb-0.5">Pakistani Phone Address</label>
+                  <div class="relative">
+                    <input
+                      id="p-phone"
+                      type="tel"
+                      required
+                      placeholder="e.g., 0300-1234567"
+                      oninput="validateFieldPhone()"
+                      class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-xs text-slate-100 placeholder-slate-600 font-mono clinical-input-focus"
+                    />
+                    <div class="absolute right-3 top-2.5" id="val-icon-phone"></div>
+                  </div>
+                  <span id="error-phone" class="text-[9px] text-rose-400 font-mono mt-0.5 hidden">Enter format 03xx-xxxxxxx (11 digits).</span>
+                </div>
+
+                <div>
+                  <label for="p-email" class="text-[11px] text-gray-400 font-medium block mb-0.5">Patient Email End-Point</label>
+                  <div class="relative">
+                    <input
+                      id="p-email"
+                      type="email"
+                      required
+                      placeholder="e.g., ali@gmail.com"
+                      oninput="validateFieldEmail()"
+                      class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-xs text-slate-100 placeholder-slate-600 clinical-input-focus"
+                    />
+                    <div class="absolute right-3 top-2.5" id="val-icon-email"></div>
+                  </div>
+                  <span id="error-email" class="text-[9px] text-rose-400 font-mono mt-0.5 hidden">Provide a valid email identity structure.</span>
+                </div>
+              </div>
+
+              <!-- Selection lists: Clinic & Specialist -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label for="p-clinic" class="text-[11px] text-gray-400 font-medium block mb-0.5">Preferred Clinic</label>
+                  <select id="p-clinic" onchange="syncDoctorsDropdown()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 clinical-input-focus cursor-pointer">
+                    <option value="clin-1">Punjab Medical Complex</option>
+                    <option value="clin-2">Katchery Road Specialty</option>
+                    <option value="clin-3">Jalalpur Jattan Crossing</option>
+                    <option value="clin-4">Gujrat Modern Welfare</option>
+                    <option value="clin-5">Ramtalai Civic Health</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="p-doctor" class="text-[11px] text-gray-400 font-medium block mb-0.5">Specialist Doctor</label>
+                  <select id="p-doctor" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 clinical-input-focus cursor-pointer">
+                    <!-- Dynamic doctor selection rendered by js based on clinic selection -->
+                  </select>
+                </div>
+              </div>
+
+              <!-- Time Scheduling selectors -->
+              <div class="grid grid-cols-2 gap-3 pb-1">
+                <div>
+                  <label for="p-date" class="text-[11px] text-gray-400 font-medium block mb-0.5">Appointment Date</label>
+                  <input
+                    id="p-date"
+                    type="date"
+                    required
+                    oninput="validateFieldDate()"
+                    class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 font-mono clinical-input-focus"
+                  />
+                  <span id="error-date" class="text-[9px] text-rose-400 font-mono mt-0.5 hidden">Date must be scheduled in the future only.</span>
+                </div>
+
+                <div>
+                  <label for="p-time" class="text-[11px] text-gray-400 font-medium block mb-0.5">Preferred Slot Hour</label>
+                  <select id="p-time" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 font-mono clinical-input-focus cursor-pointer">
+                    <option value="10:00 AM">10:00 AM - Morning session</option>
+                    <option value="11:30 AM">11:30 AM - Morning session</option>
+                    <option value="02:00 PM">02:00 PM - Afternoon session</option>
+                    <option value="03:30 PM">03:30 PM - Afternoon session</option>
+                    <option value="05:00 PM">05:00 PM - Evening session</option>
+                    <option value="07:30 PM">07:30 PM - Evening session</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Custom health issue narrative -->
+              <div>
+                <label for="p-desc" class="text-[11px] text-gray-400 font-medium block mb-0.5">Medical Symptoms / Custom Narrative</label>
+                <textarea
+                  id="p-desc"
+                  rows="2"
+                  required
+                  placeholder="Elaborate symptoms experienced for correct treatment channeling..."
+                  oninput="validateFieldDesc()"
+                  class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-100 placeholder-slate-600 clinical-input-focus"
+                ></textarea>
+                <div class="flex items-center justify-between text-[9px] text-slate-500 font-mono mt-0.5">
+                  <span id="error-desc" class="text-rose-400 hidden">Required field. Enforce at least 10 description letters.</span>
+                  <span id="char-counter">0 / 250 characters</span>
+                </div>
+              </div>
+
+              <!-- Submit button with status tracking -->
+              <button
+                id="form-submit-btn"
+                type="submit"
+                disabled
+                class="w-full bg-slate-800 text-gray-500 border border-slate-900 font-display font-semibold py-2.5 rounded-lg text-xs cursor-not-allowed transition-all duration-300"
+              >
+                Register Medical Booking Request
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- Dynamic User Booked Appointments list (Patient Reservation Journal Toggle) -->
+        <section aria-label="Booked Appointments List" class="lg:col-span-7 bg-slate-900/50 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-4">
+              <div>
+                <span id="booking-journal-tag" class="text-sky-400 font-mono text-xs uppercase tracking-widest block mb-0.5">Booked Appointments</span>
+                <h2 class="font-display font-bold text-lg text-slate-100">Patient Reservation Journal</h2>
+              </div>
+              <span class="text-[10px] font-mono text-gray-400 bg-slate-950 border border-slate-850 px-2.5 py-1 rounded-full text-center">Live local state</span>
+            </div>
+
+            <!-- List of bookings -->
+            <div id="no-booking-state" class="border border-dashed border-slate-800 bg-slate-955/20 rounded-xl p-12 text-center flex flex-col items-center justify-center">
+              <i data-lucide="calendar" class="w-8 h-8 text-sky-500/40 mb-3 animate-pulse"></i>
+              <h3 class="font-display font-semibold text-slate-300 text-sm">No Active Booking Records</h3>
+              <p class="text-[11px] text-gray-500 max-w-sm mt-1 leading-relaxed">Fill out the BOOK APPOINTMENT form to register your appointment and map clinic coordinates locally.</p>
+            </div>
+
+            <div id="booking-list-container" class="space-y-3.5 hidden max-h-[400px] overflow-y-auto pr-1">
+              <!-- JS will dynamically populate medical reservation tickets here -->
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- State-of-the-art interactive medical gallery showcase section -->
+      <section aria-label="Clinics Showcase" class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+          <div>
+            <span class="text-sky-400 font-mono text-xs uppercase tracking-widest block mb-0.5 font-semibold">Visual Archives</span>
+            <h2 class="font-display font-bold text-xl text-slate-100">Our Top Specialized Clinics in Gujrat</h2>
+            <p class="text-xs text-gray-400 max-w-xl">Fully responsive infrastructure showcase of healthcare centers in Punjab</p>
+          </div>
+        </div>
+
+        <!-- Filter tabs for responsive gallery -->
+        <nav class="flex flex-wrap gap-2 mb-4" aria-label="Infrastructure gallery filters">
+          <button onclick="filterGallery('All')" class="gallery-category-pill active-gallery-pill px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer bg-sky-500 text-slate-950 transition-all">All Clinics Info</button>
+          <button onclick="filterGallery('PrimaryCare')" class="gallery-category-pill px-3.5 py-1.5 rounded-lg text-xs font-medium cursor-pointer bg-slate-950 text-gray-450 hover:text-slate-100 border border-slate-850 hover:border-slate-800 transition-all">Primary Care / Dental</button>
+          <button onclick="filterGallery('Specialized')" class="gallery-category-pill px-3.5 py-1.5 rounded-lg text-xs font-medium cursor-pointer bg-slate-950 text-gray-450 hover:text-slate-100 border border-slate-850 hover:border-slate-800 transition-all">Pediatrics / Heart Unit</button>
+        </nav>
+
+        <!-- Dynamic Grid containing medical images with captions -->
+        <div id="clinic-gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Semantic Footer block representation -->
+    <footer role="contentinfo" class="p-6 bg-slate-950 border-t border-slate-900 relative z-20 text-xs text-gray-550 leading-normal">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-slate-350 font-display">PULSEHEALTH CLINICS GUJRAT</span>
+            <span class="text-slate-800">|</span>
+            <span class="text-[10px] font-mono bg-slate-900 text-slate-400 px-2.5 py-0.5 rounded border border-slate-850">GUJRAT MEDICAL PORTAL</span>
+          </div>
+          <p class="text-[10px] text-gray-500 mt-1 max-w-xl">
+            Live interactive clinical registry
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Interactive Lightbox Modal (JavaScript Display dynamic overlay component) -->
+    <div id="lightbox-modal" onclick="closeLightbox()" class="fixed inset-0 bg-slate-950/92 z-50 flex items-center justify-center p-4 md:p-8 hidden">
+      <div onclick="event.stopPropagation()" class="relative max-w-4xl w-full bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row items-stretch">
+        
+        <!-- Media element left -->
+        <div class="relative flex-grow bg-black flex items-center justify-center min-h-[250px] md:min-h-[400px]">
+          <img id="lightbox-img" src="" alt="Clinical Preview Image" referrerPolicy="no-referrer" class="max-h-[70vh] w-full object-contain" />
+          
+          <!-- Next/Prev Buttons -->
+          <button onclick="prevLightboxImage()" class="absolute left-4 p-2.5 bg-slate-950/70 hover:bg-sky-500 hover:text-slate-950 hover:scale-105 rounded-full text-white cursor-pointer transition-all border border-slate-800 hover:border-sky-400">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </button>
+          <button onclick="nextLightboxImage()" class="absolute right-4 p-2.5 bg-slate-950/70 hover:bg-sky-500 hover:text-slate-950 hover:scale-105 rounded-full text-white cursor-pointer transition-all border border-slate-800 hover:border-sky-400">
+            <i data-lucide="arrow-right" class="w-4 h-4 animate-bounce"></i>
+          </button>
+        </div>
+
+        <!-- Info side column right -->
+        <div class="w-full md:w-80 p-6 flex flex-col justify-between border-t md:border-t-0 md:border-l border-slate-800 bg-slate-950/85">
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <span id="lightbox-category-badge" class="text-[9px] font-mono bg-sky-500/10 text-sky-400 px-2.5 py-1 rounded-full border border-sky-500/20 uppercase tracking-wide font-bold">Category</span>
+              <button onclick="closeLightbox()" class="p-1.5 bg-slate-900 hover:bg-slate-800 text-gray-400 hover:text-white rounded-lg cursor-pointer border border-slate-800">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <div>
+              <h4 id="lightbox-title" class="font-display font-bold text-base text-slate-50 leading-snug">Clinic Title Place</h4>
+              <span id="lightbox-id" class="font-mono text-[9px] text-gray-500 block mt-1">ID CORE: CLINIC-01</span>
+            </div>
+
+            <p id="lightbox-desc" class="text-xs text-gray-400 leading-relaxed">Detailed medical capacity summary</p>
+          </div>
+
+          <div class="border-t border-slate-900 pt-4 mt-4 space-y-1.5 text-xs">
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-sky-450 shrink-0"></i>
+              <span class="text-slate-400">Equipment capacity:</span>
+              <span id="lightbox-equipment" class="text-slate-200 font-medium">Standard Ward</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5 text-sky-450 shrink-0"></i>
+              <span class="text-slate-400">Town District:</span>
+              <span id="lightbox-area" class="text-slate-200 font-medium">District Court Rd</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Configuration (gitignored — holds API tokens) -->
+    <script src="config.js"></script>
+
+    <!-- Project Script Reference -->
+    <script src="script.js"></script>
+    <script>
+      // Automatically trigger icon parsing once DOM completes rendering
+      document.addEventListener("DOMContentLoaded", () => {
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      });
+    </script>
+  </body>
+</html>
